@@ -219,6 +219,62 @@ describe('detectPatterns', () => {
     expect(numericGroup!.urls).toHaveLength(3);
   });
 
+  it('detects static sibling group under non-root parent', () => {
+    const groups = patternsFromURLs([
+      'https://example.com/careers',
+      'https://example.com/careers/engineer',
+      'https://example.com/careers/designer',
+      'https://example.com/careers/manager',
+    ]);
+    const careersGroup = groups.find((g) => g.pattern.includes('careers'));
+    expect(careersGroup).toBeDefined();
+    expect(careersGroup!.urls).toHaveLength(3);
+    expect(careersGroup!.pattern).toBe('/careers/{name}');
+  });
+
+  it('detects static sibling group in nested path', () => {
+    const groups = patternsFromURLs([
+      'https://example.com/products',
+      'https://example.com/products/category/shoes',
+      'https://example.com/products/category/hats',
+      'https://example.com/products/category/shirts',
+    ]);
+    const catGroup = groups.find((g) => g.pattern.includes('category'));
+    expect(catGroup).toBeDefined();
+    expect(catGroup!.urls).toHaveLength(3);
+  });
+
+  it('does NOT group root-level static siblings', () => {
+    const groups = patternsFromURLs([
+      'https://example.com/about',
+      'https://example.com/contact',
+      'https://example.com/faq',
+      'https://example.com/privacy',
+    ]);
+    // Root-level pages should not be grouped
+    expect(groups).toHaveLength(0);
+  });
+
+  it('detects both dynamic and static groups under same parent', () => {
+    const groups = patternsFromURLs([
+      'https://example.com/products/1',
+      'https://example.com/products/2',
+      'https://example.com/products/3',
+      'https://example.com/products/category/shoes',
+      'https://example.com/products/category/hats',
+      'https://example.com/products/category/shirts',
+    ]);
+    // Dynamic group: /products/{id}
+    const numericGroup = groups.find((g) => g.pattern.includes('{id}'));
+    expect(numericGroup).toBeDefined();
+    expect(numericGroup!.urls).toHaveLength(3);
+    // category is a static child with sub-children, should be recursed into
+    // and category's children form a static group
+    const catGroup = groups.find((g) => g.pattern.includes('category'));
+    expect(catGroup).toBeDefined();
+    expect(catGroup!.urls).toHaveLength(3);
+  });
+
   it('handles large URL set efficiently', () => {
     const urls: string[] = [];
     for (let i = 0; i < 500; i++) {

@@ -10,6 +10,7 @@ import type {
 import { getPatternColor } from '../constants/colors';
 
 const MIN_GROUP_SIZE = 2;
+const STATIC_GROUP_MIN_SIZE = 3;
 
 const LISTING_KEYWORDS = ['list', 'index', 'archive', 'category', 'tag', 'search', 'categories', 'tags'];
 const DETAIL_KEYWORDS = ['detail', 'item', 'view', 'post', 'article'];
@@ -106,7 +107,7 @@ function getDynamicSegmentLabel(type: DynamicSegmentType): string {
     case 'uuid': return '{uuid}';
     case 'date': return '{year}';
     case 'slug': return '{slug}';
-    case 'mixed': return '{param}';
+    case 'mixed': return '{name}';
   }
 }
 
@@ -149,6 +150,22 @@ function collectGroups(node: URLTreeNode, groups: RawGroup[], _parentSegment: st
     }
 
     if (urls.length >= MIN_GROUP_SIZE) {
+      groups.push({
+        parentPath: node.fullPath || `/${node.segment}`,
+        parentSegment: node.segment,
+        segmentValues,
+        urls,
+        childrenStructures: new Map(),
+      });
+    }
+  }
+
+  // Group static leaves if enough siblings under a non-root parent
+  const staticLeaves = staticChildren.filter((c) => c.children.length === 0 && c.urls.length > 0);
+  if (staticLeaves.length >= STATIC_GROUP_MIN_SIZE && node.depth >= 1) {
+    const segmentValues = staticLeaves.map((c) => c.segment);
+    const urls = staticLeaves.flatMap((c) => c.urls);
+    if (urls.length >= STATIC_GROUP_MIN_SIZE) {
       groups.push({
         parentPath: node.fullPath || `/${node.segment}`,
         parentSegment: node.segment,
@@ -204,7 +221,7 @@ function generateExplanation(
     : dynamicSeg?.dynamicType === 'uuid' ? 'UUID'
     : dynamicSeg?.dynamicType === 'date' ? '年（4桁の数字）'
     : dynamicSeg?.dynamicType === 'slug' ? 'テキストスラッグ'
-    : '可変パラメータ';
+    : '固定名ページ';
 
   const samples = dynamicSeg?.sampleValues?.slice(0, 3).join(', ') ?? '';
 
