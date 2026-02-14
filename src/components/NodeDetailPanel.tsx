@@ -166,7 +166,7 @@ export function NodeDetailPanel() {
   const pattern = data.patternGroup as PatternGroup | undefined;
 
   // Try to find a snapshot for this node's URL
-  const fullUrl = data.fullPath !== '/' ? `https://${selectedNodeId.split('/')[0]}${data.fullPath}` : undefined;
+  const fullUrl = data.url as string | undefined;
   const snapshot = fullUrl ? getSnapshot(fullUrl) : undefined;
 
   return (
@@ -222,12 +222,17 @@ export function NodeDetailPanel() {
           <VisualPatternSection url={fullUrl} groups={visualPatternGroups} />
         )}
 
-        {/* Path */}
+        {/* URL */}
         <div style={{ marginBottom: 16 }}>
-          <div style={SECTION_HEADER}>パス</div>
-          <code style={{ fontSize: 13, background: '#f5f5f5', padding: '4px 8px', borderRadius: 4, display: 'block', wordBreak: 'break-all' }}>
-            {data.fullPath}
-          </code>
+          <div style={SECTION_HEADER}>URL</div>
+          <a
+            href={data.url as string}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ fontSize: 13, background: '#f5f5f5', padding: '8px 10px', borderRadius: 4, display: 'block', wordBreak: 'break-all', color: '#4A90D9', textDecoration: 'none' }}
+          >
+            {data.url as string}
+          </a>
         </div>
 
         {/* Page Type */}
