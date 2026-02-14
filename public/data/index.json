@@ -1,0 +1,9 @@
+{
+  "projects": [
+    {
+      "id": "example-com",
+      "name": "Example.com",
+      "description": "サンプルECサイト"
+    }
+  ]
+}

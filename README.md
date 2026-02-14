@@ -4,28 +4,20 @@ CSV/ExcelのURLリストをインポートして、インタラクティブな�
 
 ## 特徴
 
-- **ドラッグ&ドロップ**でCSV/Excelファイルを読み込み
+- **案件管理** — リポジトリ内にCSVを配置、ディレクトリで案件を分けてWeb UIから切替
+- **ドラッグ&ドロップ**でCSV/Excelファイルを直接読み込みも可能
 - **ツリー構造で可視化** — Miro/Figmaのようなスムーズなズーム・パン操作
 - **ページパターン自動検出** — 一覧/詳細/固定/ページネーションを自動判定し、色分け＋日本語で理由を表示
-- **スクリーンショット取得** (v2) — 外部APIでページのスクショ・メタ情報・DOM構造を取得
-- **ビジュアルパターン分類** (v2) — 画像比較（pHash/SSIM）とDOM構造比較でページを自動グルーピング
+- **スクリーンショット自動取得** — GitHub Actions + Playwright でスクショ・メタ情報・DOM構造を自動取得（APIキー不要）
+- **ビジュアルパターン分類** — 画像比較（pHash/SSIM）とDOM構造比較でページを自動グルーピング
 - **GitHub Pages対応** — 静的SPAとしてデプロイ可能
-
-## デモ
-
-サンプルデータが内蔵されています。起動後「サンプルデータで試す」ボタンをクリックするだけで動作を確認できます。
 
 ## セットアップ
 
 ```bash
-# リポジトリをクローン
 git clone git@github.com:ttikoantt/sitemap-visualizer.git
 cd sitemap-visualizer
-
-# 依存関係のインストール
 npm install
-
-# 開発サーバー起動
 npm run dev
 ```
 
@@ -33,15 +25,11 @@ npm run dev
 
 ## 使い方
 
-### 1. URLリストの読み込み
+### 1. 案件の選択
 
-画面中央のアップロードエリアにCSVまたはExcelファイルをドラッグ&ドロップします。
+起動すると登録済みの案件一覧がドロップダウンに表示されます。案件を選択して「読み込み」ボタンを押すと、サイトマップが生成されます。
 
-**対応フォーマット:**
-- CSV (.csv)
-- Excel (.xlsx, .xls)
-
-URL列は自動検出されます（ヘッダーに「url」「URL」「address」「link」等が含まれていればOK）。ヘッダーがない場合も、URLらしき列を自動判定します。
+CSVファイルのドラッグ&ドロップでも直接読み込めます。
 
 ### 2. サイトマップの操作
 
@@ -54,38 +42,61 @@ URL列は自動検出されます（ヘッダーに「url」「URL」「address�
 
 ### 3. パターンの確認
 
-ノード（URLの箱）をクリックすると右パネルに詳細が表示されます：
+ノードをクリックすると右パネルに詳細が表示されます：
 
 - **パス** — 完全なURLパス
 - **ページタイプ** — 一覧 / 詳細 / 固定 / ページネーション
 - **URLパターン** — `/products/{id}` のようなパターン表記
 - **判定理由** — なぜそのタイプと判定されたかの説明
-- **セグメント分析** — 各パスセグメントの種類（固定/数値ID/スラッグ等）
-- **サンプルURL** — 同じパターンに属するURLの一覧
-
-左下の凡例パネルで、パターンごとの色と件数を確認できます。
+- **スクリーンショット** — Playwrightで自動取得した画像（取得済みの場合）
+- **メタ情報** — title, description, h1, OGP
+- **DOM構造** — セマンティックタグの構造ツリー
 
 ### 4. レイアウト切替
 
-ツールバーの「↓ 縦」「→ 横」ボタンでツリーの展開方向を切り替えられます。
+ツールバーの「縦」「横」ボタンでツリーの展開方向を切り替えられます。
 
-### 5. スクリーンショット取得 (v2)
+### 5. スクリーンショット
 
-ツールバーの歯車アイコンから設定画面を開き、取得方法を選択します。
+スクリーンショットはGitHub Actionsで自動的に取得されます（APIキー不要）。
 
-| 方法 | 説明 |
-|------|------|
-| ScreenshotOne | スクリーンショットのみ取得（シンプル） |
-| ScrapingBee | スクショ + HTML取得（ボット対策回避対応） |
-| カスタムプロキシ | 自前のプロキシサーバー経由 |
-| なし | スクショ機能を使わない（デフォルト） |
+- **自動実行**: CSVファイルを更新してプッシュすると自動トリガー
+- **手動実行**: GitHub Actions タブ → Take Screenshots → Run workflow
+- **ローカル実行**: `npm run screenshots`
 
-APIキーを入力後、ツールバーの「全ページスクショ取得」でバッチ取得できます。取得後は「ビジュアル分類」ボタンで画像/DOM比較によるパターン再分類が実行されます。
+スクショ取得後、ツールバーの「ビジュアル分類」ボタンで画像/DOM比較によるパターン再分類が実行できます。
 
-**設定項目:**
-- リクエスト間隔（1〜10秒）
-- robots.txt遵守の有無
-- APIキー（localStorageに保存）
+## 案件の追加方法
+
+1. `public/data/{案件ID}/` ディレクトリを作成
+2. `urls.csv` を配置（`url` ヘッダー付き）
+3. `public/data/index.json` に追記:
+
+```json
+{
+  "projects": [
+    { "id": "example-com", "name": "Example.com", "description": "サンプル" },
+    { "id": "new-project", "name": "New Project", "description": "新規案件" }
+  ]
+}
+```
+
+4. プッシュ → GitHub Actionsでスクショ自動生成 → デプロイ
+
+### ディレクトリ構成
+
+```
+public/data/
+├── index.json              # 案件一覧
+├── example-com/
+│   ├── urls.csv            # URLリスト
+│   ├── screenshots/        # Playwright生成画像
+│   └── screenshots.json    # マニフェスト
+└── another-project/
+    ├── urls.csv
+    ├── screenshots/
+    └── screenshots.json
+```
 
 ## 技術スタック
 
@@ -97,7 +108,8 @@ APIキーを入力後、ツールバーの「全ページスクショ取得」�
 | papaparse | CSV解析 |
 | xlsx (SheetJS) | Excel解析 |
 | zustand | 状態管理 |
-| vitest | テスト（86件） |
+| Playwright | スクリーンショット取得 (CI) |
+| vitest | テスト |
 
 ## 開発
 
@@ -108,11 +120,11 @@ npm test
 # テスト（ウォッチモード）
 npm run test:watch
 
-# カバレッジ付きテスト
-npm run test:coverage
-
 # ビルド
 npm run build
+
+# スクリーンショット生成（ローカル）
+npm run screenshots
 
 # Lint
 npm run lint
@@ -122,31 +134,33 @@ npm run lint
 
 ```
 src/
-├── components/          # UIコンポーネント
-│   ├── FileUploader.tsx     # D&Dアップロード
-│   ├── SitemapCanvas.tsx    # React Flowキャンバス
-│   ├── URLNode.tsx          # カスタムノード（箱）
-│   ├── NodeDetailPanel.tsx  # 右パネル（詳細表示）
-│   ├── PatternLegend.tsx    # 凡例
-│   ├── ToolbarControls.tsx  # ツールバー
-│   ├── SettingsPanel.tsx    # 設定画面
-│   └── EmptyState.tsx       # 初期画面
-├── store/               # 状態管理
-│   ├── sitemap-store.ts     # メインストア
-│   └── screenshot-store.ts  # スクショ設定・状態
-├── types/               # 型定義
-├── utils/               # コアロジック（純粋関数）
-│   ├── url-parser.ts        # URL解析・正規化
-│   ├── tree-builder.ts      # ツリー構築（Trie）
-│   ├── pattern-detector.ts  # パターン検出
-│   ├── layout-engine.ts     # ELKレイアウト
-│   ├── file-parser.ts       # CSV/Excel読込
-│   ├── screenshot-service.ts # スクショ取得
-│   ├── image-comparator.ts  # 画像比較（pHash/SSIM）
-│   ├── dom-comparator.ts    # DOM構造比較
-│   ├── visual-pattern-detector.ts # ビジュアル分類
-│   └── robots-parser.ts     # robots.txt解析
-└── constants/           # 定数（カラーパレット等）
+├── components/              # UIコンポーネント
+│   ├── ProjectSelector.tsx      # 案件選択ドロップダウン
+│   ├── FileUploader.tsx         # D&Dアップロード
+│   ├── SitemapCanvas.tsx        # React Flowキャンバス
+│   ├── URLNode.tsx              # カスタムノード（箱）
+│   ├── NodeDetailPanel.tsx      # 右パネル（詳細表示）
+│   ├── PatternLegend.tsx        # 凡例
+│   ├── ToolbarControls.tsx      # ツールバー
+│   ├── SettingsPanel.tsx        # SS情報表示
+│   └── EmptyState.tsx           # 初期画面
+├── store/                   # 状態管理
+│   ├── sitemap-store.ts         # メインストア（案件管理含む）
+│   └── screenshot-store.ts      # SSマニフェスト管理
+├── utils/                   # コアロジック
+│   ├── url-parser.ts            # URL解析・正規化
+│   ├── tree-builder.ts          # ツリー構築（Trie）
+│   ├── pattern-detector.ts      # パターン検出
+│   ├── layout-engine.ts         # ELKレイアウト
+│   ├── file-parser.ts           # CSV/Excel読込
+│   ├── project-loader.ts        # 案件・マニフェスト読込
+│   ├── image-comparator.ts      # 画像比較（pHash/SSIM）
+│   ├── dom-comparator.ts        # DOM構造比較
+│   └── visual-pattern-detector.ts # ビジュアル分類
+├── types/                   # 型定義
+└── constants/               # 定数
+scripts/
+└── take-screenshots.ts      # Playwrightスクショスクリプト
 ```
 
 ## デプロイ（GitHub Pages）

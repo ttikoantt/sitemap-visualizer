@@ -14,7 +14,8 @@ export async function fetchRobotsTxt(hostname: string): Promise<RobotsRules> {
   const rules: RobotsRules = { disallowed: [], crawlDelay: null };
 
   try {
-    const res = await fetch(`https://${hostname}/robots.txt`, {
+    const robotsUrl = `https://${hostname}/robots.txt`;
+    const res = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(robotsUrl)}`, {
       signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) {

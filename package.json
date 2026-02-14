@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "screenshots": "tsx scripts/take-screenshots.ts"
   },
   "dependencies": {
     "@xyflow/react": "^12.10.0",
@@ -39,6 +40,8 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.48.0",
     "vite": "^7.3.1",
+    "playwright": "^1.50.0",
+    "tsx": "^4.19.0",
     "vitest": "^4.0.18"
   }
 }

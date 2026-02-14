@@ -20,8 +20,6 @@ const SECTION_HEADER = {
 };
 
 function ScreenshotSection({ snapshot }: { snapshot: PageSnapshot }) {
-  const retrySnapshot = useScreenshotStore((s) => s.retrySnapshot);
-
   return (
     <div style={{ marginBottom: 16 }}>
       <div style={{ ...SECTION_HEADER, marginBottom: 8 }}>スクリーンショット</div>
@@ -40,36 +38,15 @@ function ScreenshotSection({ snapshot }: { snapshot: PageSnapshot }) {
         />
       )}
 
-      {snapshot.status === 'fetching' && (
-        <div style={{ padding: 20, textAlign: 'center', color: '#888', background: '#f9f9f9', borderRadius: 6 }}>
-          取得中...
-        </div>
-      )}
-
       {snapshot.status === 'error' && (
         <div style={{ padding: 12, background: '#fef2f2', borderRadius: 6, fontSize: 12 }}>
-          <div style={{ color: '#DE3618', marginBottom: 8 }}>{snapshot.error}</div>
-          <button
-            onClick={() => retrySnapshot(snapshot.url)}
-            style={{
-              padding: '4px 12px', borderRadius: 4, border: '1px solid #ddd',
-              background: '#fff', cursor: 'pointer', fontSize: 11,
-            }}
-          >
-            リトライ
-          </button>
-        </div>
-      )}
-
-      {snapshot.status === 'blocked' && (
-        <div style={{ padding: 12, background: '#fff8e1', borderRadius: 6, fontSize: 12, color: '#856404' }}>
-          {snapshot.error}
+          <div style={{ color: '#DE3618' }}>{snapshot.error}</div>
         </div>
       )}
 
       {snapshot.status === 'pending' && (
         <div style={{ padding: 12, background: '#f5f5f5', borderRadius: 6, fontSize: 12, color: '#888', textAlign: 'center' }}>
-          まだ取得されていません
+          マニフェストにスクリーンショットがありません
         </div>
       )}
     </div>
@@ -178,8 +155,6 @@ export function NodeDetailPanel() {
   const nodes = useSitemapStore((s) => s.nodes);
   const selectNode = useSitemapStore((s) => s.selectNode);
   const getSnapshot = useScreenshotStore((s) => s.getSnapshot);
-  const fetchSnapshot = useScreenshotStore((s) => s.fetchSnapshot);
-  const config = useScreenshotStore((s) => s.config);
   const visualPatternGroups = useScreenshotStore((s) => s.visualPatternGroups);
 
   if (!selectedNodeId) return null;
@@ -235,22 +210,6 @@ export function NodeDetailPanel() {
       <div style={{ padding: '16px 20px' }}>
         {/* Screenshot */}
         {snapshot && <ScreenshotSection snapshot={snapshot} />}
-
-        {/* Fetch screenshot button */}
-        {!snapshot && fullUrl && config.method !== 'none' && (
-          <div style={{ marginBottom: 16 }}>
-            <button
-              onClick={() => fetchSnapshot(fullUrl)}
-              style={{
-                width: '100%', padding: '8px 16px', borderRadius: 6,
-                border: '1px solid #4A90D9', background: '#f0f7ff',
-                color: '#4A90D9', cursor: 'pointer', fontSize: 13, fontWeight: 600,
-              }}
-            >
-              スクリーンショットを取得
-            </button>
-          </div>
-        )}
 
         {/* Metadata */}
         {snapshot && <MetadataSection snapshot={snapshot} />}

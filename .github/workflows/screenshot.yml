@@ -1,0 +1,40 @@
+name: Take Screenshots
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/data/**/urls.csv'
+      - 'public/data/index.json'
+
+permissions:
+  contents: write
+
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Take screenshots
+        run: npx tsx scripts/take-screenshots.ts
+
+      - name: Commit screenshots
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/data/*/screenshots/
+          git add public/data/*/screenshots.json
+          git diff --staged --quiet || git commit -m "Update screenshots [skip ci]"
+          git push

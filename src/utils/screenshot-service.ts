@@ -1,9 +1,10 @@
 import type { ScreenshotConfig, PageSnapshot, PageMetadata, DomStructure } from '../types';
 import { fetchRobotsTxt, isPathAllowed } from './robots-parser';
 
+const CORS_PROXY = 'https://corsproxy.io/?url=';
+
 const DEFAULT_CONFIG: ScreenshotConfig = {
-  method: 'none',
-  apiKey: '',
+  enabled: true,
   rateLimit: 2000,
   respectRobotsTxt: true,
   maxRetries: 2,
@@ -14,118 +15,17 @@ function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-// --- ScreenshotOne API ---
-async function fetchViaScreenshotOne(
-  url: string,
-  apiKey: string,
-  timeout: number,
-): Promise<{ screenshotBase64: string }> {
-  const params = new URLSearchParams({
-    access_key: apiKey,
-    url,
-    format: 'png',
-    viewport_width: '1280',
-    viewport_height: '900',
-    full_page: 'false',
-    delay: '2', // wait 2s for JS to render
-    block_ads: 'true',
-    block_trackers: 'true',
-  });
-
-  const res = await fetch(`https://api.screenshotone.com/take?${params}`, {
+// --- Fetch HTML via CORS proxy ---
+async function fetchHtmlViaProxy(url: string, timeout: number): Promise<string> {
+  const res = await fetch(`${CORS_PROXY}${encodeURIComponent(url)}`, {
     signal: AbortSignal.timeout(timeout),
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`ScreenshotOne error ${res.status}: ${text}`);
+    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
   }
 
-  const blob = await res.blob();
-  const base64 = await blobToBase64(blob);
-  return { screenshotBase64: base64 };
-}
-
-// --- ScrapingBee API ---
-async function fetchViaScrapingBee(
-  url: string,
-  apiKey: string,
-  timeout: number,
-): Promise<{ screenshotBase64: string; html: string }> {
-  // Screenshot
-  const screenshotParams = new URLSearchParams({
-    api_key: apiKey,
-    url,
-    screenshot: 'true',
-    screenshot_full_page: 'false',
-    render_js: 'true',
-    wait: '2000',
-    block_ads: 'true',
-    premium_proxy: 'true', // residential proxy for anti-bot bypass
-  });
-
-  const screenshotRes = await fetch(`https://app.scrapingbee.com/api/v1?${screenshotParams}`, {
-    signal: AbortSignal.timeout(timeout),
-  });
-
-  if (!screenshotRes.ok) {
-    const text = await screenshotRes.text();
-    throw new Error(`ScrapingBee error ${screenshotRes.status}: ${text}`);
-  }
-
-  const screenshotBlob = await screenshotRes.blob();
-  const screenshotBase64 = await blobToBase64(screenshotBlob);
-
-  // HTML content (separate request for DOM)
-  const htmlParams = new URLSearchParams({
-    api_key: apiKey,
-    url,
-    render_js: 'true',
-    wait: '2000',
-    premium_proxy: 'true',
-  });
-
-  let html = '';
-  try {
-    const htmlRes = await fetch(`https://app.scrapingbee.com/api/v1?${htmlParams}`, {
-      signal: AbortSignal.timeout(timeout),
-    });
-    if (htmlRes.ok) {
-      html = await htmlRes.text();
-    }
-  } catch {
-    // HTML fetch failed, continue with screenshot only
-  }
-
-  return { screenshotBase64, html };
-}
-
-// --- Custom proxy ---
-async function fetchViaProxy(
-  url: string,
-  proxyUrl: string,
-  timeout: number,
-): Promise<{ screenshotBase64?: string; html: string }> {
-  const res = await fetch(proxyUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      url,
-      screenshot: true,
-      waitFor: 2000,
-    }),
-    signal: AbortSignal.timeout(timeout),
-  });
-
-  if (!res.ok) {
-    throw new Error(`Proxy error ${res.status}: ${await res.text()}`);
-  }
-
-  const data = await res.json();
-  return {
-    screenshotBase64: data.screenshot,
-    html: data.html || '',
-  };
+  return await res.text();
 }
 
 // --- DOM Structure Extraction ---
@@ -219,7 +119,7 @@ export async function fetchPageSnapshot(
   url: string,
   config: ScreenshotConfig = DEFAULT_CONFIG,
 ): Promise<PageSnapshot> {
-  if (config.method === 'none') {
+  if (!config.enabled) {
     return { url, status: 'pending' };
   }
 
@@ -249,46 +149,30 @@ export async function fetchPageSnapshot(
     }
 
     try {
-      let screenshotBase64: string | undefined;
-      let html = '';
+      const html = await fetchHtmlViaProxy(url, config.timeout);
 
-      switch (config.method) {
-        case 'screenshotone': {
-          const result = await fetchViaScreenshotOne(url, config.apiKey, config.timeout);
-          screenshotBase64 = result.screenshotBase64;
-          break;
-        }
-        case 'scrapingbee': {
-          const result = await fetchViaScrapingBee(url, config.apiKey, config.timeout);
-          screenshotBase64 = result.screenshotBase64;
-          html = result.html;
-          break;
-        }
-        case 'proxy': {
-          const result = await fetchViaProxy(url, config.proxyUrl || '', config.timeout);
-          screenshotBase64 = result.screenshotBase64;
-          html = result.html;
-          break;
-        }
-      }
+      const metadata = extractMetadata(html);
+      const domStructure = extractDomStructure(html);
+      const domFingerprint = generateDomFingerprint(domStructure);
 
       const snapshot: PageSnapshot = {
         url,
-        screenshotBase64,
+        metadata,
+        domStructure,
+        domFingerprint,
         status: 'success',
         fetchedAt: Date.now(),
       };
 
-      // Extract metadata and DOM from HTML if available
-      if (html) {
-        snapshot.metadata = extractMetadata(html);
-        snapshot.domStructure = extractDomStructure(html);
-        snapshot.domFingerprint = generateDomFingerprint(snapshot.domStructure);
-      }
-
-      // Create blob URL for display
-      if (screenshotBase64) {
-        snapshot.screenshotUrl = screenshotBase64;
+      // Use og:image as visual representation
+      if (metadata.ogImage) {
+        // Resolve relative og:image URLs
+        try {
+          const resolved = new URL(metadata.ogImage, url).href;
+          snapshot.screenshotUrl = resolved;
+        } catch {
+          snapshot.screenshotUrl = metadata.ogImage;
+        }
       }
 
       return snapshot;
@@ -296,9 +180,8 @@ export async function fetchPageSnapshot(
     } catch (e) {
       lastError = (e as Error).message;
 
-      // Check if it's a bot detection error
-      if (lastError.includes('403') || lastError.includes('429') || lastError.includes('challenge')) {
-        // Bot detection - will retry with backoff
+      // Check if it's a rate limit or server error (retryable)
+      if (lastError.includes('403') || lastError.includes('429') || lastError.includes('500')) {
         continue;
       }
 
@@ -333,14 +216,4 @@ export async function fetchBatchSnapshots(
   }
 
   return results;
-}
-
-// --- Helpers ---
-function blobToBase64(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
 }

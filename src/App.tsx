@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useSitemapStore } from './store/sitemap-store';
 import { EmptyState } from './components/EmptyState';
 import { SitemapCanvas } from './components/SitemapCanvas';
@@ -8,7 +9,12 @@ import { SettingsPanel } from './components/SettingsPanel';
 
 function App() {
   const nodes = useSitemapStore((s) => s.nodes);
+  const loadProjects = useSitemapStore((s) => s.loadProjects);
   const hasData = nodes.length > 0;
+
+  useEffect(() => {
+    loadProjects();
+  }, [loadProjects]);
 
   return (
     <div style={{

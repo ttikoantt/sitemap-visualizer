@@ -8,7 +8,6 @@ export type {
 } from './pattern';
 export type { SitemapNodeData } from './flow';
 export type {
-  FetchMethod,
   ScreenshotConfig,
   PageMetadata,
   DomStructure,

@@ -1,9 +1,5 @@
-export type FetchMethod = 'screenshotone' | 'scrapingbee' | 'proxy' | 'none';
-
 export interface ScreenshotConfig {
-  method: FetchMethod;
-  apiKey: string;
-  proxyUrl?: string;
+  enabled: boolean;
   rateLimit: number; // ms between requests
   respectRobotsTxt: boolean;
   maxRetries: number;
@@ -28,7 +24,7 @@ export interface DomStructure {
 
 export interface PageSnapshot {
   url: string;
-  screenshotUrl?: string; // blob URL or data URL
+  screenshotUrl?: string; // og:image URL
   screenshotBase64?: string;
   metadata?: PageMetadata;
   domStructure?: DomStructure;

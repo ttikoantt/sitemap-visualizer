@@ -1,20 +1,18 @@
 import { useScreenshotStore } from '../store/screenshot-store';
-import type { FetchMethod } from '../types';
-
-const METHODS: Array<{ value: FetchMethod; label: string; description: string }> = [
-  { value: 'none', label: 'なし', description: 'スクリーンショット取得を無効にする' },
-  { value: 'screenshotone', label: 'ScreenshotOne', description: 'ScreenshotOne API でスクショのみ取得' },
-  { value: 'scrapingbee', label: 'ScrapingBee', description: 'ScrapingBee API でスクショ + DOM取得（ボット対策回避対応）' },
-  { value: 'proxy', label: 'カスタムプロキシ', description: '自前のプロキシサーバーを使用' },
-];
+import { useSitemapStore } from '../store/sitemap-store';
 
 export function SettingsPanel() {
-  const config = useScreenshotStore((s) => s.config);
   const showSettings = useScreenshotStore((s) => s.showSettings);
-  const setConfig = useScreenshotStore((s) => s.setConfig);
   const setShowSettings = useScreenshotStore((s) => s.setShowSettings);
+  const snapshots = useScreenshotStore((s) => s.snapshots);
+  const manifestLoaded = useScreenshotStore((s) => s.manifestLoaded);
+  const manifestGeneratedAt = useScreenshotStore((s) => s.manifestGeneratedAt);
+  const loadManifest = useScreenshotStore((s) => s.loadManifest);
+  const currentProject = useSitemapStore((s) => s.currentProject);
 
   if (!showSettings) return null;
+
+  const successCount = Array.from(snapshots.values()).filter((s) => s.status === 'success').length;
 
   return (
     <div style={{
@@ -33,7 +31,7 @@ export function SettingsPanel() {
           background: '#fff',
           borderRadius: 12,
           padding: '24px 32px',
-          width: 520,
+          width: 440,
           maxHeight: '80vh',
           overflow: 'auto',
           boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
@@ -43,7 +41,7 @@ export function SettingsPanel() {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>
-            スクリーンショット取得設定
+            スクリーンショット情報
           </h2>
           <button
             onClick={() => setShowSettings(false)}
@@ -53,156 +51,67 @@ export function SettingsPanel() {
           </button>
         </div>
 
-        {/* Fetch Method */}
-        <div style={{ marginBottom: 20 }}>
-          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#555', marginBottom: 8 }}>
-            取得方法
-          </label>
-          {METHODS.map((m) => (
-            <label
-              key={m.value}
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 10,
-                padding: '10px 12px',
-                marginBottom: 4,
-                borderRadius: 8,
-                cursor: 'pointer',
-                background: config.method === m.value ? '#f0f7ff' : '#fafafa',
-                border: `1px solid ${config.method === m.value ? '#4A90D9' : '#eee'}`,
-                transition: 'all 0.15s',
-              }}
-            >
-              <input
-                type="radio"
-                name="method"
-                value={m.value}
-                checked={config.method === m.value}
-                onChange={() => setConfig({ method: m.value })}
-                style={{ marginTop: 2 }}
-              />
-              <div>
-                <div style={{ fontWeight: 600, fontSize: 13 }}>{m.label}</div>
-                <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{m.description}</div>
-              </div>
-            </label>
-          ))}
+        <div style={{ fontSize: 13, lineHeight: 2 }}>
+          <div>
+            <span style={{ color: '#888' }}>ステータス: </span>
+            {manifestLoaded ? (
+              <span style={{ color: '#2e7d32', fontWeight: 600 }}>読み込み済み</span>
+            ) : (
+              <span style={{ color: '#999' }}>未読み込み</span>
+            )}
+          </div>
+          <div>
+            <span style={{ color: '#888' }}>スクリーンショット数: </span>
+            <span style={{ fontWeight: 600 }}>{successCount}</span>
+          </div>
+          {manifestGeneratedAt && (
+            <div>
+              <span style={{ color: '#888' }}>最終生成日時: </span>
+              <span>{new Date(manifestGeneratedAt).toLocaleString('ja-JP')}</span>
+            </div>
+          )}
         </div>
 
-        {/* API Key */}
-        {config.method !== 'none' && config.method !== 'proxy' && (
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#555', marginBottom: 6 }}>
-              APIキー
-            </label>
-            <input
-              type="password"
-              value={config.apiKey}
-              onChange={(e) => setConfig({ apiKey: e.target.value })}
-              placeholder="APIキーを入力..."
+        <div style={{
+          marginTop: 20,
+          padding: '12px 16px',
+          background: '#f6f8fa',
+          borderRadius: 8,
+          fontSize: 12,
+          color: '#555',
+          lineHeight: 1.8,
+        }}>
+          <strong>スクリーンショットの生成方法</strong>
+          <ul style={{ margin: '8px 0 0', paddingLeft: 20 }}>
+            <li>GitHub Actions で Playwright が自動的にスクリーンショットを取得します</li>
+            <li>CSVファイルを更新してプッシュすると自動実行されます</li>
+            <li>手動実行: Actions タブ → Take Screenshots → Run workflow</li>
+            <li>ローカル: <code>npm run screenshots</code></li>
+          </ul>
+        </div>
+
+        {currentProject && (
+          <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
+            <button
+              onClick={() => loadManifest(currentProject.id)}
               style={{
-                width: '100%',
-                padding: '8px 12px',
+                flex: 1,
+                padding: '8px 16px',
                 borderRadius: 6,
-                border: '1px solid #ddd',
+                border: '1px solid #4A90D9',
+                background: '#f0f7ff',
+                color: '#4A90D9',
+                cursor: 'pointer',
                 fontSize: 13,
-                boxSizing: 'border-box',
+                fontWeight: 600,
               }}
-            />
-            <div style={{ fontSize: 11, color: '#999', marginTop: 4 }}>
-              {config.method === 'screenshotone'
-                ? 'screenshotone.com でAPIキーを取得してください'
-                : 'app.scrapingbee.com でAPIキーを取得してください'
-              }
-            </div>
+            >
+              マニフェスト再読み込み
+            </button>
           </div>
         )}
 
-        {/* Proxy URL */}
-        {config.method === 'proxy' && (
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#555', marginBottom: 6 }}>
-              プロキシURL
-            </label>
-            <input
-              type="url"
-              value={config.proxyUrl || ''}
-              onChange={(e) => setConfig({ proxyUrl: e.target.value })}
-              placeholder="https://your-proxy.workers.dev"
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                borderRadius: 6,
-                border: '1px solid #ddd',
-                fontSize: 13,
-                boxSizing: 'border-box',
-              }}
-            />
-          </div>
-        )}
-
-        {/* Rate Limit */}
-        {config.method !== 'none' && (
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#555', marginBottom: 6 }}>
-              リクエスト間隔: {config.rateLimit / 1000}秒
-            </label>
-            <input
-              type="range"
-              min={1000}
-              max={10000}
-              step={500}
-              value={config.rateLimit}
-              onChange={(e) => setConfig({ rateLimit: Number(e.target.value) })}
-              style={{ width: '100%' }}
-            />
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#999' }}>
-              <span>1秒</span>
-              <span>10秒</span>
-            </div>
-          </div>
-        )}
-
-        {/* robots.txt */}
-        {config.method !== 'none' && (
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={config.respectRobotsTxt}
-                onChange={(e) => setConfig({ respectRobotsTxt: e.target.checked })}
-              />
-              <span style={{ fontSize: 13 }}>robots.txt を遵守する</span>
-            </label>
-            <div style={{ fontSize: 11, color: '#999', marginTop: 4, marginLeft: 24 }}>
-              クロールが禁止されているページはスキップします
-            </div>
-          </div>
-        )}
-
-        {/* Bot Protection Notice */}
-        {config.method === 'scrapingbee' && (
-          <div style={{
-            padding: '12px 16px',
-            background: '#f0f7ff',
-            borderRadius: 8,
-            border: '1px solid #cce0ff',
-            fontSize: 12,
-            color: '#555',
-            marginBottom: 16,
-          }}>
-            <strong>ボット対策回避について</strong>
-            <ul style={{ margin: '8px 0 0', paddingLeft: 20 }}>
-              <li>ScrapingBee はレジデンシャルプロキシを使用し、多くのボット対策を自動回避します</li>
-              <li>Cloudflare, Akamai等の対策にも対応（premium_proxy使用）</li>
-              <li>取得失敗時はエクスポネンシャルバックオフで自動リトライします</li>
-              <li>リトライ回数: {config.maxRetries}回</li>
-            </ul>
-          </div>
-        )}
-
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
           <button
             onClick={() => setShowSettings(false)}
             style={{
