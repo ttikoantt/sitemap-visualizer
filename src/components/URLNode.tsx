@@ -48,9 +48,16 @@ export function URLNode({ data }: { data: SitemapNodeData }) {
         </span>
       </div>
 
-      <div style={{ color: '#666', fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {data.fullPath}
-      </div>
+      <a
+        href={data.url as string}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        style={{ color: '#4A90D9', fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', textDecoration: 'none' }}
+        title={data.url as string}
+      >
+        {data.url as string}
+      </a>
 
       {data.urlCount > 1 && (
         <div style={{

@@ -3,6 +3,7 @@ import type { PatternGroup, PageType } from './pattern';
 export interface SitemapNodeData extends Record<string, unknown> {
   label: string;
   fullPath: string;
+  url: string;
   urlCount: number;
   patternGroup?: PatternGroup;
   pageType: PageType;

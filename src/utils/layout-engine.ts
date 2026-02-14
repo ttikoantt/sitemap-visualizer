@@ -103,6 +103,11 @@ export async function computeLayout(
     positionMap.set(child.id, { x: child.x ?? 0, y: child.y ?? 0 });
   }
 
+  // Determine hostname from root node for building full URLs
+  const hostname = root.segment === '(root)'
+    ? root.children[0]?.segment ?? ''
+    : root.segment;
+
   const nodes: Node<SitemapNodeData>[] = flatNodes.map((fn) => {
     const pos = positionMap.get(fn.id) ?? { x: 0, y: 0 };
     const matchedPattern = patternMap.get(fn.treeNode.fullPath) ?? fn.patternGroup;
@@ -113,6 +118,10 @@ export async function computeLayout(
     const { pageType } = classifyPageType(fn.treeNode, siblingCount, parentSegment);
 
     const urlCount = countURLs(fn.treeNode);
+    const fullPath = fn.treeNode.fullPath || '/';
+    const url = fn.treeNode.depth === 0
+      ? `https://${hostname}`
+      : `https://${hostname}${fullPath}`;
 
     return {
       id: fn.id,
@@ -120,7 +129,8 @@ export async function computeLayout(
       position: pos,
       data: {
         label: fn.treeNode.segment,
-        fullPath: fn.treeNode.fullPath || '/',
+        fullPath,
+        url,
         urlCount,
         patternGroup: matchedPattern,
         pageType,
