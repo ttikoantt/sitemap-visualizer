@@ -1,4 +1,14 @@
 import { useSitemapStore } from '../store/sitemap-store';
+import { useScreenshotStore } from '../store/screenshot-store';
+
+const BTN_STYLE = {
+  padding: '4px 10px',
+  borderRadius: 4,
+  border: '1px solid #ddd',
+  background: '#fff',
+  cursor: 'pointer',
+  fontSize: 11,
+};
 
 export function ToolbarControls() {
   const layoutDirection = useSitemapStore((s) => s.layoutDirection);
@@ -7,6 +17,17 @@ export function ToolbarControls() {
   const parsedURLs = useSitemapStore((s) => s.parsedURLs);
   const patternGroups = useSitemapStore((s) => s.patternGroups);
   const reset = useSitemapStore((s) => s.reset);
+
+  const screenshotConfig = useScreenshotStore((s) => s.config);
+  const setShowSettings = useScreenshotStore((s) => s.setShowSettings);
+  const fetchAllSnapshots = useScreenshotStore((s) => s.fetchAllSnapshots);
+  const classifyPatterns = useScreenshotStore((s) => s.classifyPatterns);
+  const isFetching = useScreenshotStore((s) => s.isFetching);
+  const isClassifying = useScreenshotStore((s) => s.isClassifying);
+  const fetchProgress = useScreenshotStore((s) => s.fetchProgress);
+  const snapshots = useScreenshotStore((s) => s.snapshots);
+
+  const successCount = Array.from(snapshots.values()).filter((s) => s.status === 'success').length;
 
   return (
     <div style={{
@@ -19,11 +40,12 @@ export function ToolbarControls() {
       padding: '8px 14px',
       display: 'flex',
       alignItems: 'center',
-      gap: 12,
+      gap: 10,
       boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
       zIndex: 5,
       fontSize: 12,
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      flexWrap: 'wrap',
     }}>
       {fileName && (
         <span style={{ color: '#666' }}>
@@ -35,13 +57,9 @@ export function ToolbarControls() {
         <button
           onClick={() => setLayoutDirection('DOWN')}
           style={{
-            padding: '4px 10px',
-            borderRadius: 4,
-            border: '1px solid #ddd',
+            ...BTN_STYLE,
             background: layoutDirection === 'DOWN' ? '#4A90D9' : '#fff',
             color: layoutDirection === 'DOWN' ? '#fff' : '#666',
-            cursor: 'pointer',
-            fontSize: 11,
           }}
         >
           縦
@@ -49,31 +67,63 @@ export function ToolbarControls() {
         <button
           onClick={() => setLayoutDirection('RIGHT')}
           style={{
-            padding: '4px 10px',
-            borderRadius: 4,
-            border: '1px solid #ddd',
+            ...BTN_STYLE,
             background: layoutDirection === 'RIGHT' ? '#4A90D9' : '#fff',
             color: layoutDirection === 'RIGHT' ? '#fff' : '#666',
-            cursor: 'pointer',
-            fontSize: 11,
           }}
         >
           横
         </button>
       </div>
 
+      {/* Screenshot controls */}
+      <div style={{ width: 1, height: 20, background: '#e0e0e0' }} />
+
       <button
-        onClick={reset}
-        style={{
-          padding: '4px 10px',
-          borderRadius: 4,
-          border: '1px solid #ddd',
-          background: '#fff',
-          color: '#888',
-          cursor: 'pointer',
-          fontSize: 11,
-        }}
+        onClick={() => setShowSettings(true)}
+        style={{ ...BTN_STYLE, color: screenshotConfig.method !== 'none' ? '#4A90D9' : '#888' }}
       >
+        {screenshotConfig.method !== 'none' ? `SS: ${screenshotConfig.method}` : 'SS設定'}
+      </button>
+
+      {screenshotConfig.method !== 'none' && (
+        <>
+          <button
+            onClick={() => {
+              const urls = parsedURLs.map((u) => u.original);
+              fetchAllSnapshots(urls);
+            }}
+            disabled={isFetching}
+            style={{
+              ...BTN_STYLE,
+              background: isFetching ? '#f0f0f0' : '#f0f7ff',
+              color: isFetching ? '#999' : '#4A90D9',
+              border: '1px solid #4A90D9',
+              cursor: isFetching ? 'wait' : 'pointer',
+            }}
+          >
+            {isFetching ? fetchProgress.stage : '全ページ取得'}
+          </button>
+
+          {successCount > 1 && (
+            <button
+              onClick={classifyPatterns}
+              disabled={isClassifying}
+              style={{
+                ...BTN_STYLE,
+                background: isClassifying ? '#f0f0f0' : '#e8f5e9',
+                color: isClassifying ? '#999' : '#2e7d32',
+                border: '1px solid #50B83C',
+                cursor: isClassifying ? 'wait' : 'pointer',
+              }}
+            >
+              {isClassifying ? '分類中...' : `ビジュアル分類 (${successCount}件)`}
+            </button>
+          )}
+        </>
+      )}
+
+      <button onClick={reset} style={{ ...BTN_STYLE, color: '#888' }}>
         リセット
       </button>
     </div>

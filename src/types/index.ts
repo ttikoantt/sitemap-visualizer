@@ -7,3 +7,11 @@ export type {
   PatternGroup,
 } from './pattern';
 export type { SitemapNodeData } from './flow';
+export type {
+  FetchMethod,
+  ScreenshotConfig,
+  PageMetadata,
+  DomStructure,
+  PageSnapshot,
+  VisualPatternGroup,
+} from './screenshot';

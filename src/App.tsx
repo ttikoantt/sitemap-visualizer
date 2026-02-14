@@ -4,6 +4,7 @@ import { SitemapCanvas } from './components/SitemapCanvas';
 import { NodeDetailPanel } from './components/NodeDetailPanel';
 import { PatternLegend } from './components/PatternLegend';
 import { ToolbarControls } from './components/ToolbarControls';
+import { SettingsPanel } from './components/SettingsPanel';
 
 function App() {
   const nodes = useSitemapStore((s) => s.nodes);
@@ -26,6 +27,7 @@ function App() {
       ) : (
         <EmptyState />
       )}
+      <SettingsPanel />
     </div>
   );
 }
