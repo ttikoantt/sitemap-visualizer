@@ -1,7 +1,6 @@
 import ELK from 'elkjs/lib/elk.bundled.js';
 import type { Node, Edge } from '@xyflow/react';
 import type { URLTreeNode, PatternGroup, SitemapNodeData } from '../types';
-import { UNGROUPED_COLOR } from '../constants/colors';
 import { classifyPageType } from './pattern-detector';
 
 const elk = new ELK();

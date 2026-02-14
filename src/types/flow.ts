@@ -1,6 +1,6 @@
 import type { PatternGroup, PageType } from './pattern';
 
-export interface SitemapNodeData {
+export interface SitemapNodeData extends Record<string, unknown> {
   label: string;
   fullPath: string;
   urlCount: number;

@@ -36,14 +36,6 @@ export function classifySegment(values: string[]): DynamicSegmentType {
   return 'mixed';
 }
 
-function isLikelyDynamic(values: string[]): boolean {
-  if (values.length < MIN_GROUP_SIZE) return false;
-  const uniqueRatio = new Set(values).size / values.length;
-  // If most values are unique, it's likely dynamic
-  if (uniqueRatio > 0.5) return true;
-  return false;
-}
-
 function isDynamicSegmentValue(value: string): boolean {
   return NUMERIC_RE.test(value) || UUID_RE.test(value) || SLUG_RE.test(value);
 }
@@ -118,7 +110,7 @@ function getDynamicSegmentLabel(type: DynamicSegmentType): string {
   }
 }
 
-function collectGroups(node: URLTreeNode, groups: RawGroup[], parentSegment: string = ''): void {
+function collectGroups(node: URLTreeNode, groups: RawGroup[], _parentSegment: string = ''): void {
   if (node.children.length < MIN_GROUP_SIZE) {
     // Recurse into children
     for (const child of node.children) {

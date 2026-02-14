@@ -13,12 +13,12 @@ async function layoutFromURLs(urls: string[]) {
 
 describe('computeLayout', () => {
   it('produces valid React Flow nodes with positions', async () => {
-    const { nodes, edges } = await layoutFromURLs([
+    const result = await layoutFromURLs([
       'https://example.com/about',
       'https://example.com/contact',
     ]);
-    expect(nodes.length).toBeGreaterThan(0);
-    for (const node of nodes) {
+    expect(result.nodes.length).toBeGreaterThan(0);
+    for (const node of result.nodes) {
       expect(node.position).toBeDefined();
       expect(typeof node.position.x).toBe('number');
       expect(typeof node.position.y).toBe('number');
