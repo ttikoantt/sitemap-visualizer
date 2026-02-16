@@ -1,5 +1,4 @@
 import { useSitemapStore } from '../store/sitemap-store';
-import { UNGROUPED_COLOR } from '../constants/colors';
 
 export function PatternLegend() {
   const patternGroups = useSitemapStore((s) => s.patternGroups);
@@ -24,7 +23,7 @@ export function PatternLegend() {
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     }}>
       <div style={{ fontWeight: 600, fontSize: 11, color: '#888', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-        パターン凡例
+        デザインパターン ({patternGroups.length})
       </div>
       {patternGroups.map((group) => (
         <div
@@ -51,10 +50,6 @@ export function PatternLegend() {
           </span>
         </div>
       ))}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
-        <div style={{ width: 12, height: 12, borderRadius: 3, background: UNGROUPED_COLOR, flexShrink: 0 }} />
-        <span style={{ color: '#888' }}>グループなし</span>
-      </div>
     </div>
   );
 }

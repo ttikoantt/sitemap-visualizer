@@ -250,6 +250,14 @@ function generateExplanation(
   };
 }
 
+function collectAllURLs(node: URLTreeNode): ParsedURL[] {
+  const urls: ParsedURL[] = [...node.urls];
+  for (const child of node.children) {
+    urls.push(...collectAllURLs(child));
+  }
+  return urls;
+}
+
 export function detectPatterns(root: URLTreeNode): PatternGroup[] {
   const rawGroups: RawGroup[] = [];
   collectGroups(root, rawGroups);
@@ -271,6 +279,48 @@ export function detectPatterns(root: URLTreeNode): PatternGroup[] {
       color: getPatternColor(colorIndex),
       urls: group.urls,
       explanation,
+    });
+
+    colorIndex++;
+  }
+
+  // Assign ungrouped URLs as individual unique-page patterns
+  const groupedPaths = new Set<string>();
+  for (const pg of patternGroups) {
+    for (const url of pg.urls) {
+      groupedPaths.add(url.pathname);
+    }
+  }
+
+  const allURLs = collectAllURLs(root);
+  for (const url of allURLs) {
+    if (groupedPaths.has(url.pathname)) continue;
+
+    const pathSegments = url.pathname.split('/').filter(Boolean);
+    const lastSeg = pathSegments[pathSegments.length - 1] ?? '';
+    const parentSeg = pathSegments[pathSegments.length - 2] ?? '';
+    const { pageType } = classifyPageType(
+      { segment: lastSeg, fullPath: url.pathname, children: [], urls: [url], depth: pathSegments.length },
+      1,
+      parentSeg,
+    );
+
+    patternGroups.push({
+      id: `pattern-${colorIndex}`,
+      pattern: url.pathname || '/',
+      displayPattern: url.pathname || '/',
+      color: getPatternColor(colorIndex),
+      urls: [url],
+      explanation: {
+        summary: `${url.pathname || '/'} はユニークなデザインパターンのページです。`,
+        pageType,
+        pageTypeReason: '他のパターンに属さない単独ページ',
+        segments: pathSegments.map((seg, i) => ({
+          position: i,
+          type: 'static' as const,
+          staticValue: seg,
+        })),
+      },
     });
 
     colorIndex++;

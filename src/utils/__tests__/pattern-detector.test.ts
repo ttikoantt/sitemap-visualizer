@@ -131,21 +131,24 @@ describe('detectPatterns', () => {
     expect(blogGroup!.urls).toHaveLength(3);
   });
 
-  it('does NOT group unrelated paths', () => {
+  it('assigns unrelated paths as individual unique patterns', () => {
     const groups = patternsFromURLs([
       'https://example.com/about',
       'https://example.com/contact',
     ]);
-    // These are static pages, not dynamic patterns
-    expect(groups).toHaveLength(0);
+    // Each page gets its own unique pattern
+    expect(groups).toHaveLength(2);
+    expect(groups.find((g) => g.pattern === '/about')).toBeDefined();
+    expect(groups.find((g) => g.pattern === '/contact')).toBeDefined();
   });
 
-  it('respects minimum group size', () => {
+  it('assigns single URL as unique pattern', () => {
     const groups = patternsFromURLs([
       'https://example.com/products/1',
     ]);
-    // Only 1 URL, below threshold
-    expect(groups).toHaveLength(0);
+    // Single URL becomes a unique pattern
+    expect(groups).toHaveLength(1);
+    expect(groups[0].urls).toHaveLength(1);
   });
 
   it('detects multiple pattern groups', () => {
@@ -157,13 +160,17 @@ describe('detectPatterns', () => {
       'https://example.com/blog/post-two',
       'https://example.com/about',
     ]);
-    expect(groups).toHaveLength(2);
-    const productGroup = groups.find((g) => g.pattern.includes('products'));
-    const blogGroup = groups.find((g) => g.pattern.includes('blog'));
+    // 2 multi-URL groups + 1 unique pattern for /about
+    expect(groups).toHaveLength(3);
+    const productGroup = groups.find((g) => g.pattern === '/products/{id}');
+    const blogGroup = groups.find((g) => g.pattern === '/blog/{slug}');
+    const aboutGroup = groups.find((g) => g.pattern === '/about');
     expect(productGroup).toBeDefined();
     expect(blogGroup).toBeDefined();
+    expect(aboutGroup).toBeDefined();
     expect(productGroup!.urls).toHaveLength(3);
     expect(blogGroup!.urls).toHaveLength(2);
+    expect(aboutGroup!.urls).toHaveLength(1);
   });
 
   it('generates human-readable explanation', () => {
@@ -244,15 +251,16 @@ describe('detectPatterns', () => {
     expect(catGroup!.urls).toHaveLength(3);
   });
 
-  it('does NOT group root-level static siblings', () => {
+  it('does NOT merge root-level static siblings into one group', () => {
     const groups = patternsFromURLs([
       'https://example.com/about',
       'https://example.com/contact',
       'https://example.com/faq',
       'https://example.com/privacy',
     ]);
-    // Root-level pages should not be grouped
-    expect(groups).toHaveLength(0);
+    // Each root-level page is its own unique pattern (not merged into one group)
+    expect(groups).toHaveLength(4);
+    expect(groups.every((g) => g.urls.length === 1)).toBe(true);
   });
 
   it('detects both dynamic and static groups under same parent', () => {
@@ -288,7 +296,10 @@ describe('detectPatterns', () => {
     const elapsed = performance.now() - start;
 
     expect(elapsed).toBeLessThan(1000); // Under 1 second
-    expect(groups).toHaveLength(1);
-    expect(groups[0].urls).toHaveLength(500);
+    // 1 multi-URL group + 2 unique patterns for /about and /contact
+    expect(groups).toHaveLength(3);
+    const productGroup = groups.find((g) => g.pattern === '/products/{id}');
+    expect(productGroup).toBeDefined();
+    expect(productGroup!.urls).toHaveLength(500);
   });
 });
