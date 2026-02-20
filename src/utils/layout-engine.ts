@@ -5,8 +5,8 @@ import { classifyPageType } from './pattern-detector';
 
 const elk = new ELK();
 
-const NODE_WIDTH = 220;
-const NODE_HEIGHT = 80;
+const NODE_WIDTH = 280;
+const NODE_HEIGHT = 140;
 
 interface FlatNode {
   id: string;
@@ -79,8 +79,8 @@ export async function computeLayout(
     layoutOptions: {
       'elk.algorithm': 'mrtree',
       'elk.direction': direction,
-      'elk.spacing.nodeNode': '30',
-      'elk.mrtree.spacing.nodeNode': '30',
+      'elk.spacing.nodeNode': '40',
+      'elk.mrtree.spacing.nodeNode': '40',
     },
     children: flatNodes.map((fn) => ({
       id: fn.id,

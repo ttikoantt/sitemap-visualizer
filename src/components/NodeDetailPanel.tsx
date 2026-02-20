@@ -178,14 +178,17 @@ export function NodeDetailPanel() {
       height: '100%',
       background: '#fff',
       borderLeft: '1px solid #e0e0e0',
-      boxShadow: '-4px 0 16px rgba(0,0,0,0.06)',
+      boxShadow: '-4px 0 24px rgba(0,0,0,0.10)',
       overflow: 'auto',
       zIndex: 10,
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     }}>
+      {/* Color accent bar */}
+      <div style={{ height: 6, background: pattern?.color ?? '#ccc', flexShrink: 0 }} />
+
       {/* Header */}
       <div style={{
-        padding: '16px 20px',
+        padding: '14px 20px',
         borderBottom: '1px solid #f0f0f0',
         display: 'flex',
         justifyContent: 'space-between',

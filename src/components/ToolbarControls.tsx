@@ -1,13 +1,16 @@
 import { useSitemapStore } from '../store/sitemap-store';
 import { useScreenshotStore } from '../store/screenshot-store';
 
-const BTN_STYLE = {
-  padding: '4px 10px',
-  borderRadius: 4,
-  border: '1px solid #ddd',
+const BTN_STYLE: React.CSSProperties = {
+  padding: '5px 12px',
+  borderRadius: 8,
+  border: '1px solid #e0e0e0',
   background: '#fff',
   cursor: 'pointer',
   fontSize: 11,
+  fontWeight: 500,
+  transition: 'background 0.15s, box-shadow 0.15s',
+  lineHeight: '18px',
 };
 
 export function ToolbarControls() {
@@ -37,47 +40,81 @@ export function ToolbarControls() {
       left: 12,
       background: '#fff',
       border: '1px solid #e0e0e0',
-      borderRadius: 8,
+      borderRadius: 12,
       padding: '8px 14px',
       display: 'flex',
       alignItems: 'center',
       gap: 10,
-      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+      boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
       zIndex: 5,
       fontSize: 12,
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       flexWrap: 'wrap',
     }}>
       {displayName && (
-        <span style={{ color: '#666' }}>
-          {displayName} ({parsedURLs.length} URL, {patternGroups.length} パターン)
+        <span style={{ color: '#555', fontWeight: 600, letterSpacing: -0.2 }}>
+          {displayName}
         </span>
       )}
 
-      <div style={{ display: 'flex', gap: 4 }}>
+      {displayName && (
+        <div style={{ display: 'flex', gap: 6 }}>
+          <span style={{
+            background: '#f0f4ff', color: '#4A90D9',
+            padding: '2px 8px', borderRadius: 10, fontSize: 10, fontWeight: 700,
+          }}>
+            {parsedURLs.length} URL
+          </span>
+          <span style={{
+            background: '#f0faf0', color: '#2e7d32',
+            padding: '2px 8px', borderRadius: 10, fontSize: 10, fontWeight: 700,
+          }}>
+            {patternGroups.length} パターン
+          </span>
+        </div>
+      )}
+
+      <div style={{ width: 1, height: 22, background: '#e8e8e8' }} />
+
+      <div style={{
+        display: 'flex', gap: 2,
+        background: '#f5f5f5', borderRadius: 8, padding: 2,
+      }}>
         <button
           onClick={() => setLayoutDirection('DOWN')}
           style={{
             ...BTN_STYLE,
-            background: layoutDirection === 'DOWN' ? '#4A90D9' : '#fff',
-            color: layoutDirection === 'DOWN' ? '#fff' : '#666',
+            border: 'none',
+            padding: '4px 10px',
+            borderRadius: 6,
+            background: layoutDirection === 'DOWN' ? '#4A90D9' : 'transparent',
+            color: layoutDirection === 'DOWN' ? '#fff' : '#888',
+            fontWeight: 700,
+            fontSize: 13,
           }}
+          title="縦レイアウト"
         >
-          縦
+          ↓
         </button>
         <button
           onClick={() => setLayoutDirection('RIGHT')}
           style={{
             ...BTN_STYLE,
-            background: layoutDirection === 'RIGHT' ? '#4A90D9' : '#fff',
-            color: layoutDirection === 'RIGHT' ? '#fff' : '#666',
+            border: 'none',
+            padding: '4px 10px',
+            borderRadius: 6,
+            background: layoutDirection === 'RIGHT' ? '#4A90D9' : 'transparent',
+            color: layoutDirection === 'RIGHT' ? '#fff' : '#888',
+            fontWeight: 700,
+            fontSize: 13,
           }}
+          title="横レイアウト"
         >
-          横
+          →
         </button>
       </div>
 
-      <div style={{ width: 1, height: 20, background: '#e0e0e0' }} />
+      <div style={{ width: 1, height: 22, background: '#e8e8e8' }} />
 
       <button
         onClick={() => setShowSettings(true)}
@@ -116,7 +153,7 @@ export function ToolbarControls() {
         </button>
       )}
 
-      <button onClick={reset} style={{ ...BTN_STYLE, color: '#888' }}>
+      <button onClick={reset} style={{ ...BTN_STYLE, color: '#999' }}>
         リセット
       </button>
     </div>
